@@ -1,0 +1,16 @@
+### main code
+
+import pandas as pd
+df = pd.read_csv('./Januarprojekt/EEG.machinelearing_data_BRMH.csv')
+patients_info = df.loc[:,'sex':'specific.disorder']
+
+## missing data 
+missing = df.isna().sum()
+# print(missing[missing > 0])
+
+df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]].median())
+
+
+##  test multiclasification 
+X = df.loc[:, df.columns != "specific.disorder"]
+y = df.loc[:,"specific.disorder"]
