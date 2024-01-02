@@ -1,7 +1,7 @@
 ### main code
 
 import pandas as pd
-df = pd.read_csv('./Januarprojekt/EEG.machinelearing_data_BRMH.csv')
+df = pd.read_csv('./EEG.machinelearing_data_BRMH.csv')
 patients_info = df.loc[:,'sex':'specific.disorder']
 
 ## missing data 
