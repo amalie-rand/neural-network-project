@@ -97,7 +97,7 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
         
         print(train_loss)
     
-    #test_df = X_test.drop("main.disorder",axis=1), y_test
+   
 
 
 
