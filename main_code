@@ -115,4 +115,88 @@ plt.plot(Loss)
 plt.grid(True)
 
 
+# Mia's 
+## Testing the dataset
+
+import os
+import pandas as pd
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.patheffects as PathEffects
+from matplotlib.pyplot import cm
+import pickle
+import seaborn as sns
+from functools import partial
+# from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
+
+df = pd.read_csv('./Januarprojekt/EEG.machinelearing_data_BRMH.csv')
+patients_info = df.loc[:,'sex':'specific.disorder']
+
+## missing data 
+missing = df.isna().sum()
+# print(missing[missing > 0])
+
+df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]].median())
+# print(patients_info["specific.disorder"].unique(), len(patients_info["specific.disorder"].unique()))
+
+##  test multiclasification 
+X = df.loc[:, df.columns != "specific.disorder"]
+y = df.loc[:,"specific.disorder"]
+
+# ohe = OneHotEncoder(handle_unknown='ignore').fit(y)
+# y = ohe.transform(y)
+# print(y)
+
+column_to_delete = ['eeg.date',"no."]
+df = df.drop(column_to_delete, axis=1)
+print(df.shape)
+
+
+
+def plots(data):
+    sns.set_palette("Dark2")
+    sns.histplot(data=data,
+                 x="main.disorder",
+                 hue="specific.disorder")
+    plt.grid(True)
+    plt.show()
+
+
+def plot2(data):
+    countplot = partial(sns.countplot, data=data)
+    countplot(y='main.disorder',palette=["#FF0000","#008000","#FFFF00","#00FFFF","#0000FF","#800080"])
+    plt.show()
+
+# plot2(patients_info)
+
+def plot3(data):
+    countplots = partial(sns.catplot, data=data, kind='count', col_wrap=3)
+    fig,ax = plt.subplots()
+    disorder_counts = df.groupby(['main.disorder', 'specific.disorder']).size()
+    print(disorder_counts.sort_values())
+    disorder_counts.unstack('specific.disorder')\
+    .plot(kind='bar', stacked=True, ax=ax)
+    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    ax.xaxis.grid(False)
+    plt.show()
+
+# plot3(patients_info)
+
+
+
+# splitter dataen i trænings- og testsæt. 
+k_folds = 10
+
+# Initialize KFold with the desired number of splits
+for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(X,y):
+    train_df = X_train, y_train = X.iloc[train], y.iloc[train]
+    X_test, y_test = X.iloc[test], y.iloc[test]
+
+    test_df = X_test.drop("main.disorder",axis=1), y_test
+    # print(test_df[0].shape)
+    # break
 
