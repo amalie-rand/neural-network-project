@@ -37,7 +37,7 @@ for fold in range(k_folds):
     test_indices = test_indices_list[fold]
 
     X_train, y_train = X.iloc[train_indices], y.iloc[train_indices]
-    X_val, y_val = X.iloc[test_indices], y.iloc[test_indices]
+    X_test, y_test = X.iloc[test_indices], y.iloc[test_indices]
 
 
 #Neurale netværk
