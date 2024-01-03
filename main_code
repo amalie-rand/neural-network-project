@@ -5,6 +5,10 @@ import pandas as pd
 df = pd.read_csv('./EEG.machinelearing_data_BRMH.csv')
 patients_info = df.loc[:,'sex':'specific.disorder']
 
+# Encoding 'sex' as 0 for M and 1 for F
+eeg_data['sex'] = eeg_data['sex'].map({'M': 0, 'F': 1})  
+
+
 ## missing data 
 missing = df.isna().sum()
 # print(missing[missing > 0])
