@@ -12,6 +12,10 @@ df['sex'] = df['sex'].map({'M': 0, 'F': 1})
 column_to_delete = 'eeg.date'
 df = df.drop(column_to_delete, axis=1)
 
+#sletter kolonnen med main disorder
+column_to_delete2 = 'main.disorder'
+df = df.drop(column_to_delete2, axis=1)
+
 ## missing data 
 missing = df.isna().sum()
 # print(missing[missing > 0])
