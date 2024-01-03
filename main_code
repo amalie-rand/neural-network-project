@@ -1,5 +1,6 @@
 ### main code
 
+import torch
 import pandas as pd
 df = pd.read_csv('./EEG.machinelearing_data_BRMH.csv')
 patients_info = df.loc[:,'sex':'specific.disorder']
@@ -14,3 +15,13 @@ df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]]
 ##  test multiclasification 
 X = df.loc[:, df.columns != "specific.disorder"]
 y = df.loc[:,"specific.disorder"]
+
+
+
+
+#loss function
+loss_fn = torch.nn.CrossEntropyLoss(reduction='mean')
+
+#learning rate and L2 regularization/weight_decay
+learning_rate = 1e-3
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
