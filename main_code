@@ -2,6 +2,12 @@
 
 import torch
 import pandas as pd
+import numpy as np
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import KFold
+
 df = pd.read_csv('./EEG.machinelearing_data_BRMH.csv')
 
 #bruges til grafer 
