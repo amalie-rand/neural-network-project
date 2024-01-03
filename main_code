@@ -17,11 +17,94 @@ X = df.loc[:, df.columns != "specific.disorder"]
 y = df.loc[:,"specific.disorder"]
 
 
+# splitter dataen i trænings- og testsæt. 
+k_folds = 10
+
+# Initialize KFold with the desired number of splits
+kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
+display(kf)
+
+# Create lists to store training and validation indices for each fold
+train_indices_list = []
+test_indices_list = []
+
+for train_indices, test_indices in kf.split(X, y):
+    train_indices_list.append(train_indices)
+    test_indices_list.append(test_indices)
+
+for fold in range(k_folds):
+    train_indices = train_indices_list[fold]
+    test_indices = test_indices_list[fold]
+
+    X_train, y_train = X.iloc[train_indices], y.iloc[train_indices]
+    X_val, y_val = X.iloc[test_indices], y.iloc[test_indices]
 
 
-#loss function
+#Neurale netværk
+
+
+# Device to use for computations
+device = torch.device('cpu')
+#device = torch.device('cuda')
+
+# Create Tensors to hold inputs and outputs
+x = torch.tensor(np.expand_dims(x_train,1), dtype=torch.float32, device=device)
+y = torch.tensor(np.expand_dims(y_train,1), dtype=torch.float32, device=device)
+
+# Manually set random seed
+#torch.manual_seed(1)
+
+# Use the nn package to define our model and loss function.
+model = torch.nn.Sequential(
+    torch.nn.Linear(1149, 1000),
+    torch.nn.ReLU(),
+    torch.nn.Linear(1000, 500),
+    torch.nn.ReLU(),
+    torch.nn.Linear(500, 10),
+)
+model.to(device)
 loss_fn = torch.nn.CrossEntropyLoss(reduction='mean')
+
+# Use the optim package to define an Optimizer that will update the weights of
+# the model for us. Here we will use Adam; the optim package contains many other
+# optimization algoriths. The first argument to the Adam constructor tells the
+# optimizer which Tensors it should update.
 
 #learning rate and L2 regularization/weight_decay
 learning_rate = 1e-3
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
+
+
+# Number of iterations
+T = 5000
+# Allocate space for loss
+Loss = np.zeros(T)
+
+for t in range(T):
+    # Forward pass: compute predicted y by passing x to the model.
+    y_pred = model(x)
+
+    # Compute and save loss.
+    loss = loss_fn(y_pred, y)
+    Loss[t] = loss.item()
+
+    # Before the backward pass, use the optimizer object to zero all of the
+    # gradients for the variables it will update (which are the learnable
+    # weights of the model). This is because by default, gradients are
+    # accumulated in buffers( i.e, not overwritten) whenever .backward()
+    # is called. Checkout docs of torch.autograd.backward for more details.
+    optimizer.zero_grad()
+
+    # Backward pass: compute gradient of the loss with respect to model
+    # parameters
+    loss.backward()
+
+    # Calling the step function on an Optimizer makes an update to its
+    # parameters
+    optimizer.step()    
+
+plt.plot(Loss)
+plt.grid(True)
+
+
+
