@@ -3,6 +3,8 @@
 import torch
 import pandas as pd
 df = pd.read_csv('./EEG.machinelearing_data_BRMH.csv')
+
+#bruges til grafer 
 patients_info = df.loc[:,'sex':'specific.disorder']
 
 # Encoding 'sex' as 0 for M and 1 for F
