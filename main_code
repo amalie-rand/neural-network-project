@@ -8,6 +8,9 @@ patients_info = df.loc[:,'sex':'specific.disorder']
 # Encoding 'sex' as 0 for M and 1 for F
 df['sex'] = df['sex'].map({'M': 0, 'F': 1})  
 
+#sletter kolonnen med datoer 
+column_to_delete = 'eeg.date'
+df = df.drop(column_to_delete, axis=1)
 
 ## missing data 
 missing = df.isna().sum()
