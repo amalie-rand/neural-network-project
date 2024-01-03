@@ -37,7 +37,8 @@ k_folds = 10
 
 for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(X,y):
     train_df = X_train, y_train = X.iloc[train], y.iloc[train]
-    test_df = X_test, y_test = X.iloc[test], y.iloc[test]
+    X_test, y_test = X.iloc[test], y.iloc[test]
+    test_df = X_test.drop("main.disorder",axis=1), y_test
 
 #Neurale netværk
 
