@@ -50,6 +50,9 @@ for fold in range(k_folds):
     X_train, y_train = X.iloc[train_indices], y.iloc[train_indices]
     X_test, y_test = X.iloc[test_indices], y.iloc[test_indices]
 
+for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(X,y):
+    train_df = X_train, y_train = X.iloc[train], y.iloc[train]
+    test_df = X_test, y_test = X.iloc[test], y.iloc[test]
 
 #Neurale netværk
 
