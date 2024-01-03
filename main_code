@@ -35,25 +35,6 @@ y = df.loc[:,"specific.disorder"]
 # splitter dataen i trænings- og testsæt. 
 k_folds = 10
 
-# Initialize KFold with the desired number of splits
-kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
-display(kf)
-
-# Create lists to store training and validation indices for each fold
-train_indices_list = []
-test_indices_list = []
-
-for train_indices, test_indices in kf.split(X, y):
-    train_indices_list.append(train_indices)
-    test_indices_list.append(test_indices)
-
-for fold in range(k_folds):
-    train_indices = train_indices_list[fold]
-    test_indices = test_indices_list[fold]
-
-    X_train, y_train = X.iloc[train_indices], y.iloc[train_indices]
-    X_test, y_test = X.iloc[test_indices], y.iloc[test_indices]
-
 for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(X,y):
     train_df = X_train, y_train = X.iloc[train], y.iloc[train]
     test_df = X_test, y_test = X.iloc[test], y.iloc[test]
