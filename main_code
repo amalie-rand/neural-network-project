@@ -16,6 +16,10 @@ df = df.drop(column_to_delete, axis=1)
 column_to_delete2 = 'main.disorder'
 df = df.drop(column_to_delete2, axis=1)
 
+#sletter kolonnen med tal på patient
+column_to_delete3 = 'no.'
+df = df.drop(column_to_delete3, axis=1)
+
 ## missing data 
 missing = df.isna().sum()
 # print(missing[missing > 0])
@@ -70,11 +74,11 @@ y = torch.tensor(np.expand_dims(y_train,1), dtype=torch.float32, device=device)
 
 # Use the nn package to define our model and loss function.
 model = torch.nn.Sequential(
-    torch.nn.Linear(1149, 1000),
+    torch.nn.Linear(1146, 1000),
     torch.nn.ReLU(),
     torch.nn.Linear(1000, 500),
     torch.nn.ReLU(),
-    torch.nn.Linear(500, 10),
+    torch.nn.Linear(500, 12),
 )
 model.to(device)
 loss_fn = torch.nn.CrossEntropyLoss(reduction='mean')
