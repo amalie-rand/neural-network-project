@@ -3,7 +3,6 @@
 import torch
 import pandas as pd
 import numpy as np
-import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
@@ -95,19 +94,17 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
         print(train_loss)
     break
 
-# After the training loop ends
 model.eval()  # Set the model to evaluation mode
 
-# Convert test data to tensor
+# Konverterer testdata til tensor
 X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32).to(device)
 y_test_tensor = torch.tensor(y_test, dtype=torch.float32).to(device)
 
-# Predict
+# Predicter
 with torch.no_grad():
     y_pred_test = model(X_test_tensor)
 
-# Convert predictions to label format
+# Konverterer predictions til et 'label format' 
 y_pred_label = encoder.inverse_transform(y_pred_test.cpu().numpy())
 
-# Print predictions
 print("Predictions:", y_pred_label)
