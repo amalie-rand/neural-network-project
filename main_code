@@ -55,7 +55,7 @@ model = torch.nn.Sequential(
     torch.nn.Linear(1000, 500),
     torch.nn.ReLU(),
     torch.nn.Linear(500, 12),
-    torch.nn.Softmax()
+    # torch.nn.Softmax()
 )
 
 model.to(device)
@@ -101,115 +101,12 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
         print(train_loss)
 
     y_pred = model(X_test_tensor)
-    test_loss = loss_fn(y_pred, y_train_tensor)
-    acc = sum(y_pred == y_test_tensor)/len(y_test_tensor)
-
-
-
-    break
-
-# git code
-### main code
-
-import torch
-import pandas as pd
-import numpy as np
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import OneHotEncoder
-
-
-df = pd.read_csv('./Januarprojekt/EEG.machinelearing_data_BRMH.csv')
-patients_info = df.loc[:,'sex':'specific.disorder']
-
-encoder = OneHotEncoder(sparse=False)
-y = encoder.fit_transform(df[['specific.disorder']])
-
-# Encoding 'sex' as 0 for M and 1 for F
-df['sex'] = df['sex'].map({'M': 0, 'F': 1})  
-
-
-## missing data 
-# for idx, col in enumerate(df.isna().any()):
-#     if col == True:
-#         print(idx, col)
-# print(processed_df.isna().any(axis=1))
-
-# Replacing nan values in the columns Education and IQ  
-df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]].median())
-
-# Deleting non-relevant columns
-columns_to_delete = ['main.disorder','eeg.date','no.',"Unnamed: 122"]
-df = df.drop(columns_to_delete, axis=1)
-
-##  test multiclasification 
-X = df.loc[:, df.columns != "specific.disorder"]
-#y = df.loc[:,"specific.disorder"]
-
-device = torch.device('cpu')
-#device = torch.device('cuda')
-
-
-# Manually set random seed
-#torch.manual_seed(1)
-
-# Use the nn package to define our model and loss function.
-model = torch.nn.Sequential(
-    torch.nn.Linear(1144, 1000),
-    torch.nn.ReLU(),
-    torch.nn.Linear(1000, 500),
-    torch.nn.ReLU(),
-    torch.nn.Linear(500, 12),
-    torch.nn.Softmax()
-)
-
-model.to(device)
-loss_fn = torch.nn.CrossEntropyLoss(reduction='mean')
-
-
-learning_rate = 1e-3
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)
-
-# splitter dataen i trænings- og testsæt. 
-k_folds = 10
-
-# Number of iterations
-T = 100
-
-for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(X,y):
-    X_train, y_train = X.iloc[train], y[train]
-    X_test, y_test = X.iloc[test], y[test]
     
-    X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32).to(device)
-    y_train_tensor = torch.tensor(y_train, dtype=torch.float32).to(device)
-    
-    X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32).to(device)
-    y_test_tensor = torch.tensor(y_test, dtype=torch.float32).to(device)
-    for t in range(T):
-        # Forward pass: compute predicted y by passing x to the model.
-        y_pred = model(X_train_tensor)
+    a = y_pred.argmax (1)
+    guess = torch.zeros (y_pred.shape).scatter (1, a.unsqueeze (1), 1.0)
 
-        # Compute and save loss.
-        # print(X_train)
-        # print(y_pred, y_train)
-        train_loss = loss_fn(y_pred, y_train_tensor)
-        #Loss[t] = loss.item()
-
-        optimizer.zero_grad()
-
-        # Backward pass: compute gradient of the loss with respect to model
-        train_loss.backward()
-
-        # Calling the step function on an Optimizer makes an update to its
-        # parameters
-        optimizer.step()    
-        
-        # print(train_loss)
-    # print(X_test_tensor.shape)
-    y_pred = model(X_test_tensor)
-    test_loss = loss_fn(y_pred, y_test_tensor)
-    acc = sum(y_pred == y_test_tensor)/len(y_test_tensor)
+    test_loss = loss_fn(guess, y_test_tensor)
+    acc = sum(guess == y_test_tensor)/len(y_test_tensor)
     print(test_loss,acc)
-    break
+
 
