@@ -32,6 +32,11 @@ df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]]
 columns_to_delete = ['main.disorder','eeg.date','no.',"Unnamed: 122"]
 df = df.drop(columns_to_delete, axis=1)
 
+# standardiserer alle kolonner på nær specific.disorder
+columns_to_standardise = df.columns.difference(['specific.disorder'])
+scaler = StandardScaler()
+df[columns_to_standardise] = scaler.fit_transform(df[columns_to_standardise])
+
 ##  test multiclasification 
 X = df.loc[:, df.columns != "specific.disorder"]
 #y = df.loc[:,"specific.disorder"]
