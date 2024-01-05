@@ -71,14 +71,17 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
     X_train, y_train = X.iloc[train], y[train]
     X_test, y_test = X.iloc[test], y[test]
     
+    #reshape
+    X_train = X_train.reshape(-1, X_train.shape[1])
+    X_test = X_test.reshape(-1, X_test.shape[1])
+    
     for t in range(T):
         # Forward pass: compute predicted y by passing x to the model.
-        print(X_train.shape, y_train.shape)
-        print(y)
-        X_train = torch.tensor(X_train)
         y_pred = model(X_train)
 
         # Compute and save loss.
+        print(X_train)
+        print(y_pred, y_train)
         train_loss = loss_fn(y_pred, y_train)
         #Loss[t] = loss.item()
 
