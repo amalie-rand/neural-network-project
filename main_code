@@ -47,7 +47,7 @@ device = torch.device('cpu')
 
 # Use the nn package to define our model and loss function.
 model = torch.nn.Sequential(
-    torch.nn.Linear(1146, 1000),
+    torch.nn.Linear(1145, 1000),
     torch.nn.ReLU(),
     torch.nn.Linear(1000, 500),
     torch.nn.ReLU(),
