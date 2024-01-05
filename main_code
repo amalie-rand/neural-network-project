@@ -1,15 +1,15 @@
+# git code
 ### main code
 
 import torch
 import pandas as pd
-import numpy as np
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 
 
-df = pd.read_csv('/Users/benedicte/Documents/02461-IntelligentSystems/Januarprojekt/mentalhealthdata.csv')
+df = pd.read_csv('./Januarprojekt/EEG.machinelearing_data_BRMH.csv')
 patients_info = df.loc[:,'sex':'specific.disorder']
 
 encoder = OneHotEncoder(sparse=False)
@@ -20,9 +20,9 @@ df['sex'] = df['sex'].map({'M': 0, 'F': 1})
 
 
 ## missing data 
-for idx, col in enumerate(df.isna().any()):
-    if col == True:
-        print(idx, col)
+# for idx, col in enumerate(df.isna().any()):
+#     if col == True:
+#         print(idx, col)
 # print(processed_df.isna().any(axis=1))
 
 # Replacing nan values in the columns Education and IQ  
@@ -31,11 +31,6 @@ df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]]
 # Deleting non-relevant columns
 columns_to_delete = ['main.disorder','eeg.date','no.',"Unnamed: 122"]
 df = df.drop(columns_to_delete, axis=1)
-
-# standardiserer alle kolonner på nær specific.disorder
-columns_to_standardise = df.columns.difference(['specific.disorder', 'sex'])
-scaler = StandardScaler()
-df[columns_to_standardise] = scaler.fit_transform(df[columns_to_standardise])
 
 ##  test multiclasification 
 X = df.loc[:, df.columns != "specific.disorder"]
@@ -69,8 +64,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=
 k_folds = 10
 
 # Number of iterations
-T = 1000
-
+T = 100
 
 for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(X,y):
     X_train, y_train = X.iloc[train], y[train]
@@ -79,6 +73,8 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
     X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32).to(device)
     y_train_tensor = torch.tensor(y_train, dtype=torch.float32).to(device)
     
+    X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32).to(device)
+    y_test_tensor = torch.tensor(y_test, dtype=torch.float32).to(device)
     for t in range(T):
         # Forward pass: compute predicted y by passing x to the model.
         y_pred = model(X_train_tensor)
@@ -98,7 +94,7 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
         # parameters
         optimizer.step()    
         
-        print(train_loss)
+        # print(train_loss)
 
     y_pred = model(X_test_tensor)
     
@@ -108,5 +104,4 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
     test_loss = loss_fn(guess, y_test_tensor)
     acc = sum(guess == y_test_tensor)/len(y_test_tensor)
     print(test_loss,acc)
-
-
+    break
