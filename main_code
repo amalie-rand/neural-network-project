@@ -17,26 +17,22 @@ patients_info = df.loc[:,'sex':'specific.disorder']
 encoder = OneHotEncoder(sparse=False)
 y = encoder.fit_transform(df[['specific.disorder']])
 
-
 # Encoding 'sex' as 0 for M and 1 for F
 df['sex'] = df['sex'].map({'M': 0, 'F': 1})  
 
-column_to_delete1 = 'main.disorder'
-df = df.drop(column_to_delete1, axis=1)
-
-#sletter kolonnen med datoer 
-column_to_delete2 = 'eeg.date'
-df = df.drop(column_to_delete2, axis=1)
-
-#sletter kolonnen med tal på patient
-column_to_delete3 = 'no.'
-df = df.drop(column_to_delete3, axis=1)
 
 ## missing data 
-missing = df.isna().sum()
+for idx, col in enumerate(processed_df.isna().any()):
+    if col == True:
+        print(idx, col)
+# print(processed_df.isna().any(axis=1))
 
+# Replacing nan values in the columns Education and IQ  
 df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]].median())
 
+# Deleting non-relevant columns
+columns_to_delete = ['main.disorder','eeg.date','no.',"Unnamed: 122"]
+df = df.drop(columns_to_delete, axis=1)
 
 ##  test multiclasification 
 X = df.loc[:, df.columns != "specific.disorder"]
@@ -96,14 +92,4 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=42).split(
         optimizer.step()    
         
         print(train_loss)
-    
-   
-
-
-
-
-
-
-
-
 
