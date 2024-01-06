@@ -10,7 +10,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
-df = pd.read_csv('/Users/benedicte/Documents/02461-IntelligentSystems/Januarprojekt/mentalhealthdata.csv')
+df = pd.read_csv('EEG.machinelearing_data_BRMH.csv')
 patients_info = df.loc[:,'sex':'specific.disorder']
 
 encoder = OneHotEncoder(sparse=False)
@@ -18,7 +18,6 @@ y = encoder.fit_transform(df[['specific.disorder']])
 
 # Encoding 'sex' as 0 for M and 1 for F
 df['sex'] = df['sex'].map({'M': 0, 'F': 1})  
-
 
 ## missing data 
 # for idx, col in enumerate(df.isna().any()):
