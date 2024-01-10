@@ -268,3 +268,18 @@ guess_dict = {}
 for item in guess:
     guess_dict[str(item)] = guess_dict.get(str(item), 0 ) + 1
 print(guess_dict)
+
+
+y_pred_labels = torch.argmax(y_pred, dim=1).cpu().numpy()
+    y_test_labels = torch.argmax(y_test_tensor, dim=1).cpu().numpy()
+    
+    cm = confusion_matrix(y_test_labels, y_pred_labels)
+    print("Confusion Matrix for fold:", cm)
+
+    # Visualization of Confusion Matrix
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt="d")
+    plt.ylabel('Actual')
+    plt.xlabel('Predicted')
+    plt.title('Confusion Matrix')
+    plt.show()
