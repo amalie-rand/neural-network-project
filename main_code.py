@@ -260,3 +260,11 @@ plt.bar(list(range(1,11)),acc_list)
 plt.show()
 
 
+## guess code
+# defineres i kfold
+guess_dict = {}
+
+# bruges i kfold loop 
+for item in guess:
+    guess_dict[str(item)] = guess_dict.get(str(item), 0 ) + 1
+print(guess_dict)
