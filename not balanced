@@ -8,6 +8,9 @@ from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+from sklearn.metrics import balanced_accuracy_score
 
 
 dataframe = pd.read_csv('./neural-network-project/EEG.machinelearing_data_BRMH.csv')
