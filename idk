@@ -131,8 +131,12 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
     guess = torch.zeros(y_pred.shape).scatter(1, a.unsqueeze (1), 1.0)
 
     test_loss = loss_fn(guess, y_test_tensor)
-    balanced_accuracy = balanced_accuracy_score(y_test_tensor.detach().numpy(), y_pred.detach().numpy())
+    
+    #balanceret accuracy
+    balanced_acc = balanced_accuracy_score(all_y_test_labels, all_y_pred_labels)
+    print("Balanced Accuracy:", balanced_acc)
 
+    #normal accuracy
     #acc = (sum(torch.argmax(guess,dim=1) == torch.argmax(y_test_tensor,dim=1))/len(y_test_tensor))*100
     #print(acc)
     #acc_list.append(acc)
