@@ -54,7 +54,7 @@ torch.manual_seed(42)
 k_folds = 10
 
 # Number of iterations
-T = 2000
+T = 800
 acc_list = list()
 
 y_1d = np.argmax(y, axis=1) if y.ndim > 1 else y
@@ -64,7 +64,7 @@ print(class_weights)
 
 all_y_test_labels = []
 all_y_pred_labels = []
-
+balanced_accuracies = [] 
 
 for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(X,y):
     # Use the nn package to define our model and loss function.
@@ -102,7 +102,8 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
     
     all_y_test_labels.extend(y_test_labels)
     all_y_pred_labels.extend(y_pred_labels)
-    
+    fold_balanced_acc = balanced_accuracy_score(all_y_test_labels, all_y_pred_labels)
+    balanced_accuracies.append(fold_balanced_acc)
 
     
     for t in tqdm(range(T)):
@@ -132,11 +133,11 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
 
     test_loss = loss_fn(guess, y_test_tensor)
     
-    #balanceret accuracy
     balanced_acc = balanced_accuracy_score(all_y_test_labels, all_y_pred_labels)
     print("Balanced Accuracy:", balanced_acc)
+    mean_balanced_accuracy = np.mean(balanced_accuracies)
+    print("Mean Balanced Accuracy:", mean_balanced_accuracy)
 
-    #normal accuracy
     #acc = (sum(torch.argmax(guess,dim=1) == torch.argmax(y_test_tensor,dim=1))/len(y_test_tensor))*100
     #print(acc)
     #acc_list.append(acc)
