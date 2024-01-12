@@ -57,9 +57,11 @@ T = 2000
 all_y_test_labels = []
 all_y_pred_labels = []
 
+################################################################################################################################################################################
 #lists to store the mean loss 
 accumulated_train_loss = []
 accumulated_test_loss = []
+################################################################################################################################################################################
 
 #list for accuracy
 acc_list = []
@@ -113,6 +115,7 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
         # Adds our training loss values to a list 
         train_loss_list.append(train_loss.item())
 
+#################################################################################################################################################################################
         # Compute test loss
         with torch.no_grad():
             y_test_pred = model(X_test_tensor)
@@ -125,7 +128,7 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
         else:
             accumulated_train_loss.append(train_loss.item())
             accumulated_test_loss.append(test_loss.item())
-
+#################################################################################################################################################################################
     
     y_test_pred = model(X_test_tensor)
 
@@ -152,6 +155,7 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
         guess_dict[str(item)] = guess_dict.get(str(item), 0 ) + 1
     print(guess_dict)
 
+#################################################################################################################################################################################
 # Calculate mean losses across all folds for each iteration
 mean_train_loss = [loss / k_folds for loss in accumulated_train_loss]
 mean_test_loss = [loss / k_folds for loss in accumulated_test_loss]
@@ -164,6 +168,7 @@ plt.xlabel('Iteration')
 plt.title('Mean Training and Test Loss Across All Folds')
 plt.legend()
 plt.show()
+#################################################################################################################################################################################
 
 #Calculates and prints the mean accuracy 
 mean_accuracy = np.mean(acc_list)
