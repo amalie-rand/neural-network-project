@@ -8,147 +8,180 @@ from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.utils import class_weight
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+from sklearn.metrics import balanced_accuracy_score
 
+dataframe = pd.read_csv('./neural-network-project/EEG.machinelearing_data_BRMH.csv')
 
+#Data preprocessing
+def pre_processing(df):
+    missing = {}
+    for idx, boolean in enumerate(df.isna().any()):
+        if boolean == True:
+            missing[df.columns[idx]] = sum(df.iloc[:,idx].isna())
 
-df = pd.read_csv('neural-network-project/EEG.machinelearing_data_BRMH.csv')
-patients_info = df.loc[:,'sex':'specific.disorder']
+    #Replacing nan values
+    df[list(missing.keys())] = df[list(missing.keys())].fillna(df[list(missing.keys())].median())  
 
-encoder = OneHotEncoder(sparse=False)
-y = encoder.fit_transform(df[['specific.disorder']])
+    # Deleting non-relevant columns
+    columns_to_delete = ['main.disorder','eeg.date','no.',"Unnamed: 122"]
+    df = df.drop(columns_to_delete, axis=1)
 
+    # Standardize all columns except our encoded categorised columns
+    columns_standardize = df.columns.difference(['specific.disorder', 'sex'])
+    scaler = StandardScaler()
+    df[columns_standardize] = scaler.fit_transform(df[columns_standardize])
 
-# Encoding 'sex' as 0 for M and 1 for F
-df['sex'] = df['sex'].map({'M': 0, 'F': 1})  
+    # Encoding 'sex' as 0 for M and 1 for F
+    df['sex'] = df['sex'].map({'M': 0, 'F': 1})
 
-# Replacing nan values in the columns Education and IQ  
-df[["education", "IQ"]] = df[["education", "IQ"]].fillna(df[["education", "IQ"]].median())
+    #Encoding columns and defining X and y
+    encoder = OneHotEncoder(sparse_output=False)
+    y = encoder.fit_transform(df[['specific.disorder']])  
 
-# Deleting non-relevant columns
-columns_to_delete = ['main.disorder','eeg.date','no.',"Unnamed: 122"]
-df = df.drop(columns_to_delete, axis=1)
+    X = df.loc[:, df.columns != "specific.disorder"]
+    return X,y
 
-#standardiserer alle kolonner bortset fra specific.disorder
-
-columns_to_standardise = df.columns.difference(['specific.disorder', 'sex'])
-scaler = StandardScaler()
-df[columns_to_standardise] = scaler.fit_transform(df[columns_to_standardise])
-
-
-##  test multiclasification 
-X = df.loc[:, df.columns != "specific.disorder"]
+X,y = pre_processing(dataframe)
 
 device = torch.device('cpu')
 
-
-# Manually set random seed - vi har sat vores seed for reproducerbarhed 
+# Manually set random seed for reproducability
 torch.manual_seed(42)
 
-
-# splitter dataen i trænings- og testsæt. 
+#Number of K folds and iterations  
 k_folds = 10
+T = 30000
 
-# Number of iterations
-T = 200
-acc_list = list()
-
+#Balancing the L2 regularization 
 y_1d = np.argmax(y, axis=1) if y.ndim > 1 else y
 class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y_1d), y=y_1d)
 class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32)
-print(class_weights)
 
+#Empty lists for future use for confusion matrix
 all_y_test_labels = []
 all_y_pred_labels = []
 
+#empty lists used to plot weight_decay values against test loss
+weight_decay_list = [0.05, 0.1, 0.15]
+plot_list_x = []
+plot_list_y = []
 
-for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(X,y):
-    # Use the nn package to define our model and loss function.
-    model = torch.nn.Sequential(
-        torch.nn.Linear(1144, 1000),
-        torch.nn.ReLU(),
-        torch.nn.Linear(1000, 500),
-        torch.nn.ReLU(),
-        torch.nn.Linear(500, 250),
-        torch.nn.ReLU(),
-        torch.nn.Linear(250, 12),
-        #torch.nn.Softmax()
-    )
+acc_list = []
 
-    model.to(device)
-    loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights_tensor)
-
-
-    learning_rate = 1e-3
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = 0.1)
-
-    X_train, y_train = X.iloc[train], y[train]
-    X_test, y_test = X.iloc[test], y[test]
+for weight_decay in weight_decay_list:
+    loss_list_plot = []
     
-    X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32).to(device)
-    y_train_tensor = torch.tensor(y_train, dtype=torch.float32).to(device)
-    
-    X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32).to(device)
-    y_test_tensor = torch.tensor(y_test, dtype=torch.float32).to(device)
-    loss_list = []
-    
-    y_pred = model(X_test_tensor)
-    y_pred_labels = torch.argmax(y_pred, dim=1).cpu().numpy()
-    y_test_labels = torch.argmax(y_test_tensor, dim=1).cpu().numpy()
-    
-    all_y_test_labels.extend(y_test_labels)
-    all_y_pred_labels.extend(y_pred_labels)
-    
+    for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(X,y):
+        model = torch.nn.Sequential(
+            torch.nn.Linear(1144, 1000),
+            torch.nn.ReLU(),
+            torch.nn.Linear(1000, 500),
+            torch.nn.ReLU(),
+            torch.nn.Linear(500, 250),
+            torch.nn.ReLU(),
+            torch.nn.Linear(250, 12), 
+        )
 
-    
-    for t in tqdm(range(T)):
-        # Forward pass: compute predicted y by passing x to the model.
-        y_pred = model(X_train_tensor)
+        model.to(device)
+        loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights_tensor)
 
-        # Compute and save loss.
-        train_loss = loss_fn(y_pred, y_train_tensor)
-        #Loss[t] = loss.item()
+        learning_rate = 1e-6
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = weight_decay)
 
-        optimizer.zero_grad()
+        #Divides data set into a test and train set 
+        X_train, y_train = X.iloc[train], y[train]
+        X_test, y_test = X.iloc[test], y[test]
 
-        # Backward pass: compute gradient of the loss with respect to model
-        train_loss.backward()
-        loss_list.append(train_loss.item())
+        #Defining our test and train set as tensors   
+        X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32).to(device)
+        y_train_tensor = torch.tensor(y_train, dtype=torch.float32).to(device)
         
-        # Calling the step function on an Optimizer makes an update to its
-        optimizer.step()    
-    plt.plot(loss_list)
-    print(train_loss)
-    
-    # print(X_test_tensor.shape)
-    y_pred = model(X_test_tensor)
+        X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32).to(device)
+        y_test_tensor = torch.tensor(y_test, dtype=torch.float32).to(device)
+        
+        train_loss_list = []
+        
+        for t in tqdm(range(T)):
+            # Forward pass: compute predicted y by passing x to the model.
+            y_train_pred = model(X_train_tensor)
 
-    a = y_pred.argmax (1)
-    guess = torch.zeros(y_pred.shape).scatter(1, a.unsqueeze (1), 1.0)
+            # Compute and save loss.
+            train_loss = loss_fn(y_train_pred, y_train_tensor)
+            optimizer.zero_grad()
 
-    test_loss = loss_fn(guess, y_test_tensor)
-    acc = (sum(torch.argmax(guess,dim=1) == torch.argmax(y_test_tensor,dim=1))/len(y_test_tensor))*100
-    print(acc)
-    acc_list.append(acc)
-    
-    
-    
-cm = confusion_matrix(all_y_test_labels, all_y_pred_labels)
-print("Confusion Matrix for fold:", cm)
+            # Backward pass: compute gradient of the loss with respect to model
+            train_loss.backward()
 
-# Visualization of Confusion Matrix
-plt.figure(figsize=(10, 7))
-sns.heatmap(cm, annot=True, fmt="d")
-plt.ylabel('Actual')
-plt.xlabel('Predicted')
-plt.title('Confusion Matrix')
-plt.show()        
+            # Calling the step function on an Optimizer makes an update to its parameters
+            optimizer.step()   
+
+            #Adds our training loss values to a list 
+            train_loss_list.append(train_loss.item())
+
+        #plots training loss 
+        plt.plot(train_loss_list)
+        
+        y_test_pred = model(X_test_tensor)
+
+        #transforming prediction to guess
+        highest = y_test_pred.argmax (1)
+        guess = torch.zeros(y_test_pred.shape).scatter(1, highest.unsqueeze (1), 1.0)
+
+        test_loss = loss_fn(y_test_pred, y_test_tensor)  
+        
+        #labels bruges til balanced accuracy 
+        y_pred_labels = torch.argmax(y_test_pred, dim=1).cpu().numpy()
+        y_test_labels = torch.argmax(y_test_tensor, dim=1).cpu().numpy()
+        all_y_test_labels.extend(y_test_labels)
+        all_y_pred_labels.extend(y_pred_labels)
+
+        #balanceret accuracy
+        balanced_acc = balanced_accuracy_score(all_y_test_labels, all_y_pred_labels)
+        print("Balanced Accuracy:", 100*balanced_acc)
+        acc_list.append(balanced_acc)
+
+        #Prints the model's test guess for each K fold 
+        guess_dict = {}
+        for item in guess:
+            guess_dict[str(item)] = guess_dict.get(str(item), 0 ) + 1
+        print(guess_dict)
+
+        #plots weight decay against test loss mean
+        loss_list_plot.append(test_loss.item())
     
-plt.legend(list(range(1,11)))
+    mean_loss = np.mean(loss_list_plot)
+    plot_list_y.append(mean_loss)
+    plot_list_x.append(weight_decay)
+
+    #Calculates and prints the mean accuracy 
+    mean_accuracy = np.mean(acc_list)
+    print("The mean accuracy is", mean_accuracy*100)
+
+    cm = confusion_matrix(all_y_test_labels, all_y_pred_labels)
+
+    #Plots train loss against iterations 
+    plt.ylabel("Train loss")
+    plt.xlabel("Iterations ")
+    plt.legend(list(range(1,11)),title="K Fold")
+    plt.show()
+
+    #Visualization of Confusion Matrix
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt="d")
+    plt.ylabel('Actual')
+    plt.xlabel('Predicted')
+    plt.title('Confusion Matrix')
+    plt.show()        
+
+    #Plots accuracy in each k fold 
+    plt.ylabel("Accuracy")
+    plt.xlabel("K Fold ")
+    plt.bar(list(range(1,11)),acc_list,color = "#009999") 
+    plt.show()
+
+plt.scatter(x=plot_list_x, y=plot_list_y)
 plt.show()
-plt.bar(list(range(1,11)),acc_list)
-plt.show()
-
