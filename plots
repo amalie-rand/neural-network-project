@@ -1,0 +1,22 @@
+# Compute test loss
+        with torch.no_grad():
+            y_test_pred = model(X_test_tensor)
+            test_loss = loss_fn(y_test_pred, y_test_tensor)
+            test_loss_list.append(test_loss.item())
+            
+        if t < len(accumulated_train_loss):
+            accumulated_train_loss[t] += train_loss.item()
+            accumulated_test_loss[t] += test_loss.item()
+        else:
+            accumulated_train_loss.append(train_loss.item())
+            accumulated_test_loss.append(test_loss.item())
+
+
+# Plotting mean losses against iterations
+plt.plot(mean_train_loss, label='Mean Train Loss')
+plt.plot(mean_test_loss, label='Mean Test Loss')
+plt.ylabel('Mean Loss')
+plt.xlabel('Iteration')
+plt.title('Mean Training and Test Loss Across All Folds')
+plt.legend()
+plt.show()
