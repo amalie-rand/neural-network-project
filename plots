@@ -12,6 +12,10 @@
             accumulated_test_loss.append(test_loss.item())
 
 
+# Calculate mean losses across all folds for each iteration
+mean_train_loss = [loss / k_folds for loss in accumulated_train_loss]
+mean_test_loss = [loss / k_folds for loss in accumulated_test_loss]
+
 # Plotting mean losses against iterations
 plt.plot(mean_train_loss, label='Mean Train Loss')
 plt.plot(mean_test_loss, label='Mean Test Loss')
