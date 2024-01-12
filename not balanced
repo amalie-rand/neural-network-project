@@ -1,4 +1,4 @@
-## My code - not balanced
+### main code
 
 import torch
 import pandas as pd
@@ -11,7 +11,6 @@ from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 from sklearn.metrics import balanced_accuracy_score
-
 
 dataframe = pd.read_csv('./neural-network-project/EEG.machinelearing_data_BRMH.csv')
 
@@ -47,24 +46,22 @@ def pre_processing(df):
 
 X,y = pre_processing(dataframe)
 
-
-### Neural network
 device = torch.device('cpu')
 
-# Manually set random seed - we have set the seed for reproducibility
-torch.manual_seed(1021498)
+# Manually set random seed - vi har sat vores seed for reproducerbarhed 
+torch.manual_seed(42)
 
-# Number of splits 
+
+all_y_test_labels = []
+all_y_pred_labels = []
+
+# splitter dataen i trænings- og testsæt. 
 k_folds = 10
 
 # Number of iterations
-T = 500
-
+T = 400
 acc_list = []
-
-for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=9276).split(X,y):
-    guess_dict = {}
-
+for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(X,y):
     # Use the nn package to define our model and loss function.
     model = torch.nn.Sequential(
         torch.nn.Linear(1144, 1000),
@@ -78,65 +75,86 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=9276).spli
 
     model.to(device)
     loss_fn = torch.nn.CrossEntropyLoss(reduction='mean')
-    
-    learning_rate = 1e-4
-    weight_decay = 0.05
+
+
+    learning_rate = 1e-2
+    weight_decay = 0.01
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     X_train, y_train = X.iloc[train], y[train]
     X_test, y_test = X.iloc[test], y[test]
-  
+    
     X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32).to(device)
     y_train_tensor = torch.tensor(y_train, dtype=torch.float32).to(device)
-
+    
     X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32).to(device)
     y_test_tensor = torch.tensor(y_test, dtype=torch.float32).to(device)
-    
-    train_loss_list = []
+    loss_list = []
 
     for t in tqdm(range(T)):
         # Forward pass: compute predicted y by passing x to the model.
         y_pred = model(X_train_tensor)
 
         # Compute and save loss.
+        # print(X_train)
+        # print(y_pred, y_train)
         train_loss = loss_fn(y_pred, y_train_tensor)
+        #Loss[t] = loss.item()
+
         optimizer.zero_grad()
 
         # Backward pass: compute gradient of the loss with respect to model
         train_loss.backward()
-       
+        loss_list.append(train_loss.item())
         # Calling the step function on an Optimizer makes an update to its
         # parameters
-        optimizer.step()    
+        optimizer.step()   
 
-        train_loss_list.append(train_loss.item())
+    plt.plot(loss_list)
 
-    # used to plot train loss 
-    plt.plot(train_loss_list)
-    
-    y_test_pred = model(X_test_tensor)
-    # transforming prediction to guess
-    highest = y_test_pred.argmax(1)
-    guess = torch.zeros(y_test_pred.shape).scatter(1, highest.unsqueeze (1), 1.0)
-    
-    # ATTENTION! these 2 functions are not equal to each other. I don't know which is correct. Please help
-    test_loss1 = loss_fn(guess, y_test_tensor)
-    test_loss2 = loss_fn(y_test_pred, y_test_tensor)
-    print(test_loss1,test_loss2.item())
+    y_pred = model(X_test_tensor)
+    y_pred_labels = torch.argmax(y_pred, dim=1).cpu().numpy()
+    y_test_labels = torch.argmax(y_test_tensor, dim=1).cpu().numpy()
 
-    # What the model guess in a fold
+    all_y_test_labels.extend(y_test_labels)
+    all_y_pred_labels.extend(y_pred_labels)
+
+    a = y_pred.argmax (1)
+    guess = torch.zeros(y_pred.shape).scatter(1, a.unsqueeze (1), 1.0)
+
+    test_loss = loss_fn(guess, y_test_tensor)
+    acc = (sum(torch.argmax(guess,dim=1) == torch.argmax(y_test_tensor,dim=1))/len(y_test_tensor))*100
+    print(test_loss,acc)
+    acc_list.append(acc)
+    #break
+    guess_dict = {}
     for item in guess:
         guess_dict[str(item)] = guess_dict.get(str(item), 0 ) + 1
     print(guess_dict)
 
-    acc = (sum(torch.argmax(guess,dim=1) == torch.argmax(y_test_tensor,dim=1))/len(y_test_tensor))*100
-    acc_list.append(acc)
 
-# plots train loss for all folds in one
-plt.legend(list(range(1,11)),title="Kfolds")
+cm = confusion_matrix(all_y_test_labels, all_y_pred_labels)
+print("Confusion Matrix for fold:", cm)
+
+#Visualization of Confusion Matrix
+plt.figure(figsize=(10, 7))
+sns.heatmap(cm, annot=True, fmt="d")
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.title('Confusion Matrix')
+plt.show()  
+
+plt.ylabel("Train loss")
+plt.xlabel("Iterations ")
+plt.legend(list(range(1,11)),title="K Fold")
 plt.show()
 
-# plot acc for test set
-plt.bar(list(range(1,11)),acc_list)
+plt.ylabel("Accuracy")
+plt.xlabel("K Fold ")
+plt.bar(list(range(1,11)),acc_list,color = "#009999") 
 plt.show()
+
+
+
+
 
