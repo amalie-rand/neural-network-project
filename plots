@@ -1,3 +1,11 @@
+
+#Skal stå ovenover for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(X,y):
+
+#lists to store the mean loss 
+accumulated_train_loss = []
+accumulated_test_loss = []
+
+
 # Compute test loss
         with torch.no_grad():
             y_test_pred = model(X_test_tensor)
