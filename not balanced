@@ -10,7 +10,6 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-from sklearn.metrics import balanced_accuracy_score
 
 dataframe = pd.read_csv('./neural-network-project/EEG.machinelearing_data_BRMH.csv')
 
@@ -93,7 +92,6 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
     loss_list = []
 
     for t in tqdm(range(T)):
-
         # Forward pass: compute predicted y by passing x to the model.
         y_train_pred = model(X_train_tensor)
 
@@ -124,7 +122,7 @@ for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(
     #Calculating the accuracy of our prediction 
     acc = (sum(torch.argmax(guess,dim=1) == torch.argmax(y_test_tensor,dim=1))/len(y_test_tensor))*100
     print(acc)
-    acc_list.append(acc)
+    acc_list.append(acc) 
 
     #Variables for confusion matrix 
     y_pred_labels = torch.argmax(y_test_pred, dim=1).cpu().numpy()
