@@ -54,12 +54,7 @@ torch.manual_seed(42)
 
 #Number of K folds and iterations  
 k_folds = 10
-T = 30000
-
-#Balancing the L2 regularization 
-y_1d = np.argmax(y, axis=1) if y.ndim > 1 else y
-class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y_1d), y=y_1d)
-class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32)
+T = 300
 
 #Empty lists for future use for confusion matrix
 all_y_test_labels = []
@@ -70,10 +65,9 @@ weight_decay_list = [0.05, 0.1, 0.15]
 plot_list_x = []
 plot_list_y = []
 
-acc_list = []
-
 for weight_decay in weight_decay_list:
     loss_list_plot = []
+    acc_list = []
     
     for train, test in KFold(n_splits=k_folds, shuffle=True, random_state=69).split(X,y):
         model = torch.nn.Sequential(
@@ -87,8 +81,7 @@ for weight_decay in weight_decay_list:
         )
 
         model.to(device)
-        loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights_tensor)
-
+        
         learning_rate = 1e-6
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = weight_decay)
 
@@ -103,7 +96,15 @@ for weight_decay in weight_decay_list:
         X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32).to(device)
         y_test_tensor = torch.tensor(y_test, dtype=torch.float32).to(device)
         
+        #Balancing the L2 regularization 
+        y_1d = np.argmax(y_train, axis=1) if y.ndim > 1 else y
+        class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y_1d), y=y_1d)
+        class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32)
+
+        loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights_tensor)
+
         train_loss_list = []
+        test_loss_list = []
         
         for t in tqdm(range(T)):
             # Forward pass: compute predicted y by passing x to the model.
@@ -122,6 +123,8 @@ for weight_decay in weight_decay_list:
             #Adds our training loss values to a list 
             train_loss_list.append(train_loss.item())
 
+             # Compute test loss
+        
         #plots training loss 
         plt.plot(train_loss_list)
         
@@ -130,6 +133,9 @@ for weight_decay in weight_decay_list:
         #transforming prediction to guess
         highest = y_test_pred.argmax (1)
         guess = torch.zeros(y_test_pred.shape).scatter(1, highest.unsqueeze (1), 1.0)
+
+        #Calculating two losses; one imbalanced, one balanced 
+        loss_fn_unbalanced = torch.nn.CrossEntropyLoss()
 
         test_loss = loss_fn(y_test_pred, y_test_tensor)  
         
