@@ -230,7 +230,7 @@ def Neural_network(X, y, learning_rate, weight_decay, iterations, balanced):
     # plt.xlabel("K Fold ")
     # plt.bar(list(range(1,11)),acc_list,color = "#009999") 
     # plt.show()
-    print(test_loss.item())
+    # print(test_loss.item())
     return weight_decay, test_loss.item()
 
 
