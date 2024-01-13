@@ -44,10 +44,10 @@ def pre_processing(df):
     y = encoder.fit_transform(df[['specific.disorder']])  
 
     X = df.loc[:, df.columns != "specific.disorder"]
-    return X,y
+    return X, y, encoder
 
 
-def Neural_network(X, y, learning_rate, weight_decay, iterations, balanced):
+def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balanced):
     device = torch.device('cpu')
 
     # Manually set random seed for reproducability
@@ -230,9 +230,13 @@ def Neural_network(X, y, learning_rate, weight_decay, iterations, balanced):
     # plt.xlabel("K Fold ")
     # plt.bar(list(range(1,11)),acc_list,color = "#009999") 
     # plt.show()
+    
+    class_accuracies = cm.diagonal() / cm.sum(axis=1)
+    class_labels = encoder.categories_[0]  # Assuming 'specific.disorder' is the only column encoded
+    for label, accuracy in zip(class_labels, class_accuracies):
+        print(f"Accuracy for class '{label}': {accuracy * 100:.2f}%")
 
 
-X,y = pre_processing(dataframe)
-Neural_network(X, y, learning_rate=1e-4, weight_decay=0.05, iterations=100, balanced=False)
-Neural_network(X,y,1e-4,0.05,100,balanced=True)
-
+X, y, encoder = pre_processing(dataframe)
+Neural_network(X, y, encoder, learning_rate=1e-3, weight_decay=0.1, iterations=100, balanced=False)
+Neural_network(X, y, encoder, 1e-4,0.05,100,balanced=True)
