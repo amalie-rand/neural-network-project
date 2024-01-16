@@ -1,30 +1,25 @@
-### test of everything 
-### main code
-
 import torch
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
+from tqdm import tqdm
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
-from tqdm import tqdm
-from sklearn.utils import class_weight
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import confusion_matrix
-import seaborn as sns
 from sklearn.metrics import balanced_accuracy_score
 
-dataframe = pd.read_csv('./neural-network-project/EEG.machinelearing_data_BRMH.csv')
 
-#Data preprocessing
+# Data preprocessing
 def pre_processing(df):
     missing = {}
     for idx, boolean in enumerate(df.isna().any()):
         if boolean == True:
             missing[df.columns[idx]] = sum(df.iloc[:,idx].isna())
 
-    #Replacing nan values
+    # Replacing nan values
     df[list(missing.keys())] = df[list(missing.keys())].fillna(df[list(missing.keys())].median())  
 
     # Deleting non-relevant columns
@@ -47,7 +42,7 @@ def pre_processing(df):
     return X, y, encoder
 
 
-def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balanced):
+def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, weighted_classes):
     device = torch.device('cpu')
 
     # Manually set random seed for reproducability
@@ -82,16 +77,16 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
 
         # Our neural network model
         model = torch.nn.Sequential(
-            torch.nn.Linear(1144, 100),
+            torch.nn.Linear(1144, 300),
             torch.nn.ReLU(),
-            torch.nn.Linear(100, 12)
+            torch.nn.Linear(300, 12)
         )
         model.to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = weight_decay)
 
 
-        # Defining loss function if balanced or not
-        if balanced:
+        # Defining loss function based on if the classes are weighted or not
+        if weighted_classes:
             # Balancing the L2 regularization 
             y_train_1d = np.argmax(y_train, axis=1)
             class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y_train_1d), y=y_train_1d)
@@ -99,10 +94,9 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
 
             loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights_tensor)
 
-        elif not balanced:
+        elif not weighted_classes:
             loss_fn = torch.nn.CrossEntropyLoss(reduction='mean')
 
-       
         train_loss_list = []
         test_loss_list = []
         
@@ -136,10 +130,7 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
                 accumulated_train_loss.append(train_loss.item())
                 accumulated_test_loss.append(test_loss.item())
 
-        # Plots training loss 
-        # plt.plot(train_loss_list)
-        
-        if balanced:
+        if weighted_classes:
             y_test_1d = np.argmax(y_test, axis=1)
             class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(y_test_1d), y=y_test_1d)
             class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32)
@@ -148,13 +139,7 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
 
         # Test loss balanced and unbalanced
         test_loss = loss_fn(y_test_pred, y_test_tensor)
-
-        loss_fn_unbalanced = torch.nn.CrossEntropyLoss(reduction="mean")
-        test_loss_unbalanced =loss_fn_unbalanced(y_test_pred,y_test_tensor)
-
-        # print(f"The balanced test loss is: {test_loss}")
-        # print(f"The unbalanced test loss is: {test_loss_unbalanced}")
-        
+      
         # Transforming prediction to guess
         highest = y_test_pred.argmax (1)
         guess = torch.zeros(y_test_pred.shape).scatter(1, highest.unsqueeze (1), 1.0)
@@ -172,17 +157,12 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
 
         # Balanced accuracy
         balanced_acc = balanced_accuracy_score(y_test_labels, y_pred_labels)
-        # print("Balanced Accuracy:", 100*balanced_acc)
         balanced_acc_list.append(balanced_acc)
 
         # Overall accuarcy
         acc = (sum(torch.argmax(guess,dim=1) == torch.argmax(y_test_tensor,dim=1))/len(y_test_tensor))
         acc_list.append(acc)
 
-        # Plots weight decay against test loss mean
-        # loss_list_plot.append(test_loss.item())
-    
-    # mean_loss = np.mean(loss_list_plot)
     
     # Calculate mean losses across all folds for each iteration
     mean_train_loss = [loss / k_folds for loss in accumulated_train_loss]
@@ -197,41 +177,31 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
     plt.legend()
     plt.show()
 
-    #Calculates and prints the mean accuracy 
+    # Calculates and prints the mean accuracy 
     mean_accuracy_balanced = np.mean(balanced_acc_list)
     print("The balanced mean accuracy is", mean_accuracy_balanced*100)
     
-    mean_accuracy_unbalanced = np.mean(acc_list)
-    print("The unbalanced mean accuracy is", mean_accuracy_unbalanced*100)
-
-    cm = confusion_matrix(all_y_test_labels, all_y_pred_labels)
-
-    # #Plots train loss against iterations 
-    # plt.ylabel("Train loss")
-    # plt.xlabel("Iterations ")
-    # plt.legend(list(range(1,11)),title="K Fold")
-    # plt.show()
+    mean_accuracy_overall = np.mean(acc_list)
+    print("The overall mean accuracy is", mean_accuracy_overall*100)
 
     #Visualization of Confusion Matrix
+    cm = confusion_matrix(all_y_test_labels, all_y_pred_labels)
     plt.figure(figsize=(10, 7))
     sns.heatmap(cm, annot=True, fmt="d")
     plt.ylabel('Actual')
     plt.xlabel('Predicted')
     plt.title('Confusion Matrix')
     plt.show()        
-
-    # #Plots accuracy in each k fold 
-    # plt.ylabel("Accuracy")
-    # plt.xlabel("K Fold ")
-    # plt.bar(list(range(1,11)),acc_list,color = "#009999") 
-    # plt.show()
-    
+ 
     class_accuracies = cm.diagonal() / cm.sum(axis=1)
     class_labels = encoder.categories_[0]  # Assuming 'specific.disorder' is the only column encoded
     for label, accuracy in zip(class_labels, class_accuracies):
         print(f"Accuracy for class '{label}': {accuracy * 100:.2f}%")
 
 
+dataframe = pd.read_csv('./neural-network-project/EEG.machinelearing_data_BRMH.csv')
 X, y, encoder = pre_processing(dataframe)
-Neural_network(X, y, encoder, learning_rate=1e-3, weight_decay=0.1, iterations=100, balanced=False)
-Neural_network(X, y, encoder, 1e-4,0.05,100,balanced=True)
+Neural_network(X, y, encoder, learning_rate=1e-2, weight_decay=0.1, iterations=1000, weighted_classes=True)
+# Neural_network(X, y, encoder, learning_rate=1e-3, weight_decay=0.15, iterations=1000, weighted_classes=False)
+
+# Neural_network(X, y, encoder, 1e-4,0.05,500,balanced=True)
