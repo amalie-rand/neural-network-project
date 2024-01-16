@@ -82,14 +82,9 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
 
         # Our neural network model
         model = torch.nn.Sequential(
-            torch.nn.Linear(1144, 1000),
+            torch.nn.Linear(1144, 100),
             torch.nn.ReLU(),
-            torch.nn.Linear(1000, 500),
-            torch.nn.ReLU(),
-            torch.nn.Linear(500, 250),
-            torch.nn.ReLU(),
-            torch.nn.Linear(250, 12), 
-            # torch.nn.Softmax(),
+            torch.nn.Linear(100, 12)
         )
         model.to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = weight_decay)
@@ -176,7 +171,7 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, balan
         all_y_pred_labels.extend(y_pred_labels)
 
         # Balanced accuracy
-        balanced_acc = balanced_accuracy_score(all_y_test_labels, all_y_pred_labels)
+        balanced_acc = balanced_accuracy_score(y_test_labels, y_pred_labels)
         # print("Balanced Accuracy:", 100*balanced_acc)
         balanced_acc_list.append(balanced_acc)
 
