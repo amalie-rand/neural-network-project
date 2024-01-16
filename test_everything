@@ -201,5 +201,5 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, weigh
 
 dataframe = pd.read_csv('./neural-network-project/EEG.machinelearing_data_BRMH.csv')
 X, y, encoder = pre_processing(dataframe)
-Neural_network(X, y, encoder, learning_rate=1e-2, weight_decay=0.1, iterations=1000, weighted_classes=True)
-Neural_network(X, y, encoder, learning_rate=1e-3, weight_decay=0.15, iterations=1000, weighted_classes=False)
+Neural_network(X, y, encoder, learning_rate=1e-4, weight_decay=0.3, iterations=500, weighted_classes=True)
+Neural_network(X, y, encoder, learning_rate=1e-2, weight_decay=0.01, iterations=100, weighted_classes=False)
