@@ -77,9 +77,9 @@ def Neural_network(X, y, encoder, learning_rate, weight_decay, iterations, weigh
 
         # Our neural network model
         model = torch.nn.Sequential(
-            torch.nn.Linear(1144, 300),
+            torch.nn.Linear(1144, 100),
             torch.nn.ReLU(),
-            torch.nn.Linear(300, 12)
+            torch.nn.Linear(100, 12)
         )
         model.to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = weight_decay)
